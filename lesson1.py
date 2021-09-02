@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 print("\n####### задание 1 ########")
 strings = ["разработка", "сокет", "декоратор"]
 for string in strings:
@@ -51,10 +49,18 @@ print("\n####### задание 6 ########")
 with open('test_file.txt', "w", encoding="utf8") as f:
     [f.write(string + '\n') for string in ["сетевое программирование", "сокет", "декоратор"]]
 
+from chardet.universaldetector import UniversalDetector
+
+detector = UniversalDetector()
+with open('test_file.txt', "rb") as f:
+    for line in f:
+        detector.feed(line)
+        if detector.done:
+            break
+    detector.close()
+    print(f'кодировка: {detector.result}')
+
 with open('test_file.txt', "r", encoding='utf-8') as f:
     text = f.read()
     new_text = text.encode('utf-8').decode("utf-16")
-    print(text, new_text)
-
-
-
+    print(f'текст в кодировке utf-16: {new_text}')
