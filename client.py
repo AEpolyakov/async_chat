@@ -5,18 +5,18 @@ import sys
 
 
 def socket_init():
-    s = socket(AF_INET, SOCK_STREAM)
-    return s
+    client_socket = socket(AF_INET, SOCK_STREAM)
+    return client_socket
 
 
-def socket_connect(s, address, port):
-    s.connect((address, port))
+def socket_connect(client_socket, address, port):
+    client_socket.connect((address, port))
 
     presence = make_json_byte_presence()
-    s.send(presence)
+    client_socket.send(presence)
 
-    response = s.recv(1024)
-    s.close()
+    response = client_socket.recv(1024)
+    client_socket.close()
     return response.decode('unicode_escape')
 
 
@@ -38,18 +38,18 @@ def get_args(args):
     try:
         address = str(args[1])
     except Exception:
-        raise Exception('адрес не указан!!!')
+        print('No address value. Address set to "localhost"')
 
     port = 7777
     try:
         port = int(args[2])
     except Exception:
-        print('')
+        print('No port value. Port set to 7777')
 
     return address, port
 
 
-if __name__ == '__main__':
+def main():
     args = sys.argv
     address, port = get_args(args)
     print(f'{address=} {port=}')
@@ -57,3 +57,7 @@ if __name__ == '__main__':
     client_socket = socket_init()
     server_response = socket_connect(client_socket, address, port)
     print(f'{server_response=}')
+
+
+if __name__ == '__main__':
+    main()

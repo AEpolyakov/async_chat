@@ -24,20 +24,21 @@ def get_answer(action=None):
 
 
 def decode_message(raw):
-    client_message = raw.decode('unicode_escape')
-    return json.loads(client_message)
+    try:
+        client_message = raw.decode('unicode_escape')
+        return json.loads(client_message)
+    except Exception:
+        print('failed to decode message')
+    return None
 
 
 def server_accept(s):
     while True:
         client, client_address = s.accept()
-
         client_message = decode_message(client.recv(1024))
-
-        ans = get_answer(client_message['action'])
-        print(f'{ans=}')
-        client.send(json.dumps(ans).encode('utf-8'))
-
+        answer = get_answer(client_message['action'])
+        print(f'{client_message=}\n{answer=}')
+        client.send(json.dumps(answer).encode('utf-8'))
         client.close()
 
 
@@ -65,10 +66,17 @@ def get_port(args):
     return port
 
 
-if __name__ == '__main__':
+def main():
     args = sys.argv
     socket_address = get_address(args)
     socket_port = get_port(args)
 
     server_socket = socket_init(socket_address, socket_port)
     server_accept(server_socket)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception:
+        print('failed to start server')
