@@ -4,60 +4,56 @@ import json
 import sys
 
 
-class Client:
-    def __init__(self, args):
-        self.port = self.get_port(self, args)
-        self.address = self.get_addr(self, args)
-        self.socket = socket(AF_INET, SOCK_STREAM)
-        print(f'{self.port=} {self.address=}')
+def socket_init():
+    s = socket(AF_INET, SOCK_STREAM)
+    return s
 
-    def connect(self):
-        self.socket.connect((self.address, self.port))
-        presence = self.make_json_byte_presence()
 
-        print(f'{presence=}')
+def socket_connect(s, address, port):
+    s.connect((address, port))
 
-        self.socket.close()
-        return
+    presence = make_json_byte_presence()
+    s.send(presence)
 
-    @staticmethod
-    def make_json_byte_presence():
-        presence = {
-            "action": "presence",
-            "time": time.time(),
-            "type": "status",
-            "user": {
-                "account_name": "test_user",
-                "status": "online",
-            }
+    response = s.recv(1024)
+    s.close()
+    return response.decode('unicode_escape')
+
+
+def make_json_byte_presence():
+    presence = {
+        "action": "presence",
+        "time": time.time(),
+        "type": "status",
+        "user": {
+            "account_name": "test_user",
+            "status": "online",
         }
-        return json.dumps(presence).encode('utf-8')
+    }
+    return json.dumps(presence).encode('unicode_escape')
 
-    @staticmethod
-    def get_addr(self, args):
-        addr = 'localhost'
-        if len(sys.argv) > 1:
-            for i in range(len(args)):
-                try:
-                    if args[i] == '-a':
-                        addr = str(args[i + 1])
-                except Exception:
-                    print('failed to change addr. Port is set to "localhost"')
-        return addr
 
-    @staticmethod
-    def get_port(self, args):
-        port = 7777
-        if len(sys.argv) > 1:
-            for i in range(len(args)):
-                try:
-                    if args[i] == '-p':
-                        port = int(args[i+1])
-                except Exception:
-                    print('failed to change port. Port is set to 7777')
-        return port
+def get_args(args):
+    address = ''
+    try:
+        address = str(args[1])
+    except Exception:
+        raise Exception('адрес не указан!!!')
+
+    port = 7777
+    try:
+        port = int(args[2])
+    except Exception:
+        print('')
+
+    return address, port
 
 
 if __name__ == '__main__':
-    client = Client(sys.argv)
-    client.connect()
+    args = sys.argv
+    address, port = get_args(args)
+    print(f'{address=} {port=}')
+
+    client_socket = socket_init()
+    server_response = socket_connect(client_socket, address, port)
+    print(f'{server_response=}')
