@@ -38,7 +38,7 @@ def get_args(args):
 
     parser = argparse.ArgumentParser(args)
     parser.add_argument('address', type=str, default='', help="address to connect")
-    parser.add_argument('port', type=int, default=7777, help="port to connect")
+    parser.add_argument('port', nargs='?', type=int, default=7777, help="port to connect")
 
     args = parser.parse_args()
 
