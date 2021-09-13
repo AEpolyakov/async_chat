@@ -66,10 +66,20 @@ def get_port(args):
     return port
 
 
+def get_args(args):
+    import argparse
+
+    parser = argparse.ArgumentParser("server")
+    parser.add_argument('-a', type=str, default='', help="socket address")
+    parser.add_argument('-p', type=int, default=7777, help="socket port")
+
+    args = parser.parse_args()
+
+    return args.a, args.p
+
+
 def main():
-    args = sys.argv
-    socket_address = get_address(args)
-    socket_port = get_port(args)
+    socket_address, socket_port = get_args(sys.argv)
 
     server_socket = socket_init(socket_address, socket_port)
     server_accept(server_socket)

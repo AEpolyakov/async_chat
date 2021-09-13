@@ -34,19 +34,15 @@ def make_json_byte_presence():
 
 
 def get_args(args):
-    address = ''
-    try:
-        address = str(args[1])
-    except Exception:
-        print('No address value. Address set to "localhost"')
+    import argparse
 
-    port = 7777
-    try:
-        port = int(args[2])
-    except Exception:
-        print('No port value. Port set to 7777')
+    parser = argparse.ArgumentParser("client")
+    parser.add_argument('address', type=str, default='', help="address to connect")
+    parser.add_argument('port', type=int, default=7777, help="port to connect")
 
-    return address, port
+    args = parser.parse_args()
+
+    return args.address, args.port
 
 
 def main():
@@ -60,4 +56,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception:
+        print('failed to connect to server')
