@@ -42,30 +42,6 @@ def server_accept(s):
         client.close()
 
 
-def get_address(args):
-    address = 'localhost'
-    if len(args) > 1:
-        for i in range(len(args)):
-            try:
-                if args[i] == '-a':
-                    address = str(args[i + 1])
-            except Exception:
-                print('failed to change address. Port is set to "localhost"')
-    return address
-
-
-def get_port(args):
-    port = 7777
-    if len(args) > 1:
-        for i in range(len(args)):
-            try:
-                if args[i] == '-p':
-                    port = int(args[i+1])
-            except Exception:
-                print('failed to change port. Port is set to 7777')
-    return port
-
-
 def get_args(args):
     import argparse
 
