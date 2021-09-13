@@ -1,5 +1,5 @@
 import unittest
-from server import socket_init, get_answer, decode_message, server_accept, get_address, get_port
+from server import socket_init, get_answer, decode_message, server_accept, get_args
 
 
 class TestServer(unittest.TestCase):
@@ -10,29 +10,17 @@ class TestServer(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
-    def test_get_address_no_value(self):
-        self.assertEqual(get_address([]), 'localhost')
+    def test_get_args_no_value(self):
+        self.assertEqual(get_args([]), ('', 7777))
 
-    def test_get_address_value(self):
-        self.assertEqual(get_address(['', '-a', '127.0.0.2']), '127.0.0.2')
+    def test_get_args_value(self):
+        self.assertEqual(get_args(['-a', '127.0.0.2']), ('127.0.0.2', 7777))
 
-    def test_get_address_bad_value(self):
-        self.assertEqual(get_address(['', '-p', '8888']), 'localhost')
+    def test_get_args_bad_value(self):
+        self.assertEqual(get_args(['-p', '8888']), ('', 8888))
 
-    def test_get_address_with_port(self):
-        self.assertEqual(get_address(['', '-a', '127.0.0.2', '-p', '7979']), '127.0.0.2')
-
-    def test_get_port_no_value(self):
-        self.assertEqual(get_port([]), 7777)
-
-    def test_get_port_value(self):
-        self.assertEqual(get_port(['', '-p', '7979']), 7979)
-
-    def test_get_port_bad_value(self):
-        self.assertEqual(get_port(['', '-P', '8888']), 7777)
-
-    def test_get_port_with_port(self):
-        self.assertEqual(get_port(['', '-a', '127.0.0.2', '-p', '7979']), 7979)
+    def test_get_args_with_port(self):
+        self.assertEqual(get_args(['-a', '127.0.0.2', '-p', '7979']), ('127.0.0.2', 7979))
 
     def test_socket_init(self):
         s = socket_init('localhost', 7777)

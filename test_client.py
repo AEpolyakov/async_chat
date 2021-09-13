@@ -29,10 +29,10 @@ class TestClient(unittest.TestCase):
     })
 
     def test_get_args(self):
-        self.assertEqual(get_args(['', '127.0.0.2', '7979']), ('127.0.0.2', 7979))
+        self.assertEqual(get_args(['127.0.0.2', '7979']), ('127.0.0.2', 7979))
 
     def test_get_args_no_port(self):
-        self.assertEqual(get_args(['', '127.0.0.2']), ('127.0.0.2', 7777))
+        self.assertEqual(get_args(['127.0.0.2']), ('127.0.0.2', 7777))
 
     def test_get_args_no_address(self):
         self.assertEqual(get_args(['']), ('', 7777))
