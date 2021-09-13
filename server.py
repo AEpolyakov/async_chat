@@ -45,17 +45,16 @@ def server_accept(s):
 def get_args(args):
     import argparse
 
-    parser = argparse.ArgumentParser(args)
+    parser = argparse.ArgumentParser()
     parser.add_argument('-a', type=str, default='', help="socket address")
     parser.add_argument('-p', type=int, default=7777, help="socket port")
+    result = parser.parse_args(args)
 
-    args = parser.parse_args()
-
-    return args.a, args.p
+    return result.a, result.p
 
 
 def main():
-    socket_address, socket_port = get_args(sys.argv)
+    socket_address, socket_port = get_args(sys.argv[1:])
     print(f'{socket_address=} {socket_port=}')
 
     server_socket = socket_init(socket_address, socket_port)
