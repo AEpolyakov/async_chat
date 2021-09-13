@@ -2,10 +2,12 @@ from socket import *
 import time
 import json
 import sys
+from log.client_log_config import client_logger
 
 
 def socket_init():
     client_socket = socket(AF_INET, SOCK_STREAM)
+    client_logger.info('init ok')
     return client_socket
 
 
@@ -15,9 +17,11 @@ def socket_connect(client_socket, address, port):
     presence = make_json_byte_presence()
     client_socket.send(presence)
 
-    response = client_socket.recv(1024)
+    response = client_socket.recv(1024).decode('unicode_escape')
     client_socket.close()
-    return response.decode('unicode_escape')
+
+    client_logger.info(f'connect {address=} {port=} send={presence} receive={response}')
+    return response
 
 
 def make_json_byte_presence():
@@ -47,15 +51,14 @@ def get_args(args):
 def main():
     args = sys.argv
     address, port = get_args(args[1:])
-    print(f'{address=} {port=}')
 
     client_socket = socket_init()
     server_response = socket_connect(client_socket, address, port)
-    print(f'{server_response=}')
+    client_logger.info(f'{server_response=}')
 
 
 if __name__ == '__main__':
     try:
         main()
     except Exception:
-        print('failed to connect to server')
+        client_logger.critical(f'failed to connect to server')

@@ -2,12 +2,14 @@ from socket import *
 import time
 import sys
 import json
+from log.server_log_config import server_logger
 
 
 def socket_init(address, port):
     s = socket(AF_INET, SOCK_STREAM)
     s.bind((address, port))
     s.listen(5)
+    server_logger.info(f'init {address=} {port=}')
     return s
 
 
@@ -28,7 +30,7 @@ def decode_message(raw):
         client_message = raw.decode('unicode_escape')
         return json.loads(client_message)
     except Exception:
-        print('failed to decode message')
+        server_logger.error(f'failed to decode message: {raw}')
     return None
 
 
@@ -37,7 +39,7 @@ def server_accept(s):
         client, client_address = s.accept()
         client_message = decode_message(client.recv(1024))
         answer = get_answer(client_message['action'])
-        print(f'{client_message=}\n{answer=}')
+        server_logger.info(f'{client_message=}; {answer=}')
         client.send(json.dumps(answer).encode('utf-8'))
         client.close()
 
@@ -55,8 +57,6 @@ def get_args(args):
 
 def main():
     socket_address, socket_port = get_args(sys.argv[1:])
-    print(f'{socket_address=} {socket_port=}')
-
     server_socket = socket_init(socket_address, socket_port)
     server_accept(server_socket)
 
@@ -65,4 +65,4 @@ if __name__ == '__main__':
     try:
         main()
     except Exception:
-        print('failed to start server')
+        server_logger.critical('failed to start server')
