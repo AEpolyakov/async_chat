@@ -45,7 +45,7 @@ def server_accept(s):
 def get_args(args):
     import argparse
 
-    parser = argparse.ArgumentParser("server")
+    parser = argparse.ArgumentParser(args)
     parser.add_argument('-a', type=str, default='', help="socket address")
     parser.add_argument('-p', type=int, default=7777, help="socket port")
 
@@ -56,6 +56,7 @@ def get_args(args):
 
 def main():
     socket_address, socket_port = get_args(sys.argv)
+    print(f'{socket_address=} {socket_port=}')
 
     server_socket = socket_init(socket_address, socket_port)
     server_accept(server_socket)

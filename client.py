@@ -36,7 +36,7 @@ def make_json_byte_presence():
 def get_args(args):
     import argparse
 
-    parser = argparse.ArgumentParser("client")
+    parser = argparse.ArgumentParser(args)
     parser.add_argument('address', type=str, default='', help="address to connect")
     parser.add_argument('port', type=int, default=7777, help="port to connect")
 
@@ -46,8 +46,7 @@ def get_args(args):
 
 
 def main():
-    args = sys.argv
-    address, port = get_args(args)
+    address, port = get_args(sys.argv)
     print(f'{address=} {port=}')
 
     client_socket = socket_init()
