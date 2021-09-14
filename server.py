@@ -64,5 +64,7 @@ def main():
 if __name__ == '__main__':
     try:
         main()
+    except KeyboardInterrupt:
+        server_logger.info('stopped by user')
     except Exception:
         server_logger.critical('failed to start server')
