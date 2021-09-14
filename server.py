@@ -40,7 +40,7 @@ def server_accept(s):
         client_message = decode_message(client.recv(1024))
         answer = get_answer(client_message['action'])
         server_logger.info(f'{client_message=}; {answer=}')
-        client.send(json.dumps(answer).encode('utf-8'))
+        client.send(json.dumps(answer).encode('unicode_escape'))
         client.close()
 
 
