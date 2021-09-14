@@ -20,7 +20,7 @@ def socket_connect(client_socket, address, port):
     response = client_socket.recv(1024).decode('unicode_escape')
     client_socket.close()
 
-    client_logger.info(f'connect {address=} {port=} send={presence} receive={response}')
+    client_logger.info(f'connect {address=} {port=} send={presence}')
     return response
 
 
