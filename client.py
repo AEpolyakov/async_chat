@@ -5,6 +5,7 @@ import sys
 from log.client_log_config import client_logger, log
 
 
+@log
 def socket_init():
     client_socket = socket(AF_INET, SOCK_STREAM)
     client_logger.info('init ok')
@@ -47,7 +48,7 @@ def get_args(args):
 
     return result.address, result.port
 
-@log
+
 def main():
     args = sys.argv
     address, port = get_args(args[1:])

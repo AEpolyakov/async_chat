@@ -2,6 +2,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
 from functools import wraps
+import inspect
 
 
 handler = TimedRotatingFileHandler(filename=os.path.join('.', 'log', 'server.log'), when="midnight", backupCount=10)
@@ -21,9 +22,8 @@ server_logger_decorator.setLevel(logging.INFO)
 
 
 def log(function):
-    @wraps(function)
     def wrapper(*args, **kwargs):
-        server_logger_decorator.info(f'Функция {log.__name__} вызвана из функции {function.__name__}')
+        server_logger_decorator.info(f'Функция {function.__name__} вызвана из функции {inspect.stack()[1][3]}')
         result = function(*args, **kwargs)
         return result
     return wrapper

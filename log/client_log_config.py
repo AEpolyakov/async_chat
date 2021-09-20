@@ -2,6 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from functools import wraps
+import inspect
 
 
 handler = RotatingFileHandler(filename=os.path.join('.', 'log', 'client.log'), maxBytes=2000, backupCount=10)
@@ -21,9 +22,8 @@ client_logger_decorator.setLevel(logging.INFO)
 
 
 def log(function):
-    @wraps(function)
     def wrapper(*args, **kwargs):
-        client_logger_decorator.info(f'Функция {log.__name__} вызвана из функции {function.__name__}')
+        client_logger_decorator.info(f'Функция {function.__name__} вызвана из функции {inspect.stack()[1][3]}')
         result = function(*args, **kwargs)
         return result
     return wrapper
