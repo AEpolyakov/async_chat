@@ -2,9 +2,10 @@ from socket import *
 import time
 import sys
 import json
-from log.server_log_config import server_logger
+from log.server_log_config import server_logger, log
 
 
+@log
 def socket_init(address, port):
     s = socket(AF_INET, SOCK_STREAM)
     s.bind((address, port))
