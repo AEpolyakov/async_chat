@@ -3,6 +3,7 @@ import time
 import sys
 import json
 from log.server_log_config import server_logger, log
+import select
 
 
 @log
@@ -60,6 +61,47 @@ def main():
     socket_address, socket_port = get_args(sys.argv[1:])
     server_socket = socket_init(socket_address, socket_port)
     server_accept(server_socket)
+
+
+def non_blocking_socket(address):
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.bind(address)
+    sock.listen(5)
+    sock.settimeout(0.2)
+    return sock
+
+
+def main_non_blocking():
+    socket_address = get_args(sys.argv[1:])
+
+    clients = []
+    server_socket = non_blocking_socket(socket_address)
+
+    while True:
+        try:
+            connection, address = server_socket.accept()
+        except OSError as e:
+            pass
+        else:
+            print(f"Получен зарпрос на соединение с {address}")
+            clients.append(connection)
+        finally:
+            w = []
+            try:
+                r, w, e = select.select([], clients, [], 0)
+            except Exception as e:
+                pass
+
+            for s_client in w:
+                pass
+                try:
+                    pass
+                except:
+                    clients.remove(s_client)
+
+
+
+
 
 
 if __name__ == '__main__':
