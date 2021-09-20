@@ -2,7 +2,7 @@ from socket import *
 import time
 import json
 import sys
-from log.client_log_config import client_logger
+from log.client_log_config import client_logger, log
 
 
 def socket_init():
@@ -47,7 +47,7 @@ def get_args(args):
 
     return result.address, result.port
 
-
+@log
 def main():
     args = sys.argv
     address, port = get_args(args[1:])

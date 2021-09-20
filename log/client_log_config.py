@@ -1,6 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from functools import wraps
 
 
 handler = RotatingFileHandler(filename=os.path.join('.', 'log', 'client.log'), maxBytes=2000, backupCount=10)
@@ -10,3 +11,19 @@ handler.setFormatter(formater)
 client_logger = logging.getLogger('client_log')
 client_logger.addHandler(handler)
 client_logger.setLevel(logging.INFO)
+
+formater = logging.Formatter("%(asctime)s %(message)s")
+handler.setFormatter(formater)
+
+client_logger_decorator = logging.getLogger('client_log_decorator')
+client_logger_decorator.addHandler(handler)
+client_logger_decorator.setLevel(logging.INFO)
+
+
+def log(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        client_logger_decorator.info(f'Функция {log.__name__} вызвана из функции {function.__name__}')
+        result = function(*args, **kwargs)
+        return result
+    return wrapper
