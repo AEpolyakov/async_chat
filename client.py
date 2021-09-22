@@ -50,8 +50,7 @@ def get_args(args):
 
 
 def main():
-    args = sys.argv
-    address, port = get_args(args[1:])
+    address, port = get_args(sys.argv[1:])
 
     client_socket = socket_init()
     server_response = socket_connect(client_socket, address, port)
@@ -61,5 +60,7 @@ def main():
 if __name__ == '__main__':
     try:
         main()
+    except KeyboardInterrupt:
+        print('stopped by user')
     except Exception:
         client_logger.critical(f'failed to connect to server')

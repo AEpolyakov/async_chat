@@ -68,7 +68,39 @@ def non_blocking_socket(address):
     sock.bind(address)
     sock.listen(5)
     sock.settimeout(0.2)
+    print(f'{address}')
     return sock
+
+
+def read_requests(clients, all_clients):
+    responses = []
+
+    for sock in clients:
+        try:
+            data = sock.recv(1024).decode('unicode_escape')
+            responses.append(data)
+            print(f'{responses=}')
+        except Exception:
+            pass
+            # print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+            # all_clients.remove(sock)
+    return responses
+
+
+def write_responses(requests, clients, all_clients):
+
+    for sock in clients:
+
+            try:
+                for request in requests:
+                    response = request.encode('unicode_escape')
+                    sock.send(response)
+
+            except Exception:
+                pass
+                # print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+                # sock.close()
+                # all_clients.remove(sock)
 
 
 def main_non_blocking():
@@ -79,35 +111,31 @@ def main_non_blocking():
 
     while True:
         try:
-            connection, address = server_socket.accept()
+            connection, address = server_socket.accept()  # Проверка подключений
         except OSError as e:
-            pass
+            pass  # timeout вышел
         else:
-            print(f"Получен зарпрос на соединение с {address}")
+            print("Получен запрос на соединение с %s" % str(address))
             clients.append(connection)
         finally:
-            w = []
+            # Проверить наличие событий ввода-вывода
+            wait = 10
+            w, r = [], []
             try:
-                r, w, e = select.select([], clients, [], 0)
-            except Exception as e:
-                pass
+                r, w, e = select.select(clients, clients, [], wait)
+            except Exception as ex:
+                pass  # Ничего не делать, если какой-то клиент отключился
 
-            for s_client in w:
-                pass
-                try:
-                    pass
-                except:
-                    clients.remove(s_client)
-
-
-
-
+            requests = read_requests(r, clients)
+            if requests:
+                write_responses(requests, w, clients)
 
 
 if __name__ == '__main__':
     try:
-        main()
+        # main()
+        main_non_blocking()
     except KeyboardInterrupt:
         server_logger.info('stopped by user')
-    except Exception:
-        server_logger.critical('failed to start server')
+    except Exception as ex:
+        server_logger.critical(f'failed to start server, {ex}')
