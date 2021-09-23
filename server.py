@@ -81,9 +81,8 @@ def read_requests(clients, all_clients):
             responses.append(data)
             print(f'{responses=}')
         except Exception:
-            pass
-            # print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-            # all_clients.remove(sock)
+            print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+            all_clients.remove(sock)
     return responses
 
 
@@ -97,10 +96,9 @@ def write_responses(requests, clients, all_clients):
                     sock.send(response)
 
             except Exception:
-                pass
-                # print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                # sock.close()
-                # all_clients.remove(sock)
+                print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+                sock.close()
+                all_clients.remove(sock)
 
 
 def main_non_blocking():
@@ -111,20 +109,19 @@ def main_non_blocking():
 
     while True:
         try:
-            connection, address = server_socket.accept()  # Проверка подключений
+            connection, address = server_socket.accept()
         except OSError as e:
-            pass  # timeout вышел
+            pass
         else:
             print("Получен запрос на соединение с %s" % str(address))
             clients.append(connection)
         finally:
-            # Проверить наличие событий ввода-вывода
             wait = 10
             w, r = [], []
             try:
                 r, w, e = select.select(clients, clients, [], wait)
             except Exception as ex:
-                pass  # Ничего не делать, если какой-то клиент отключился
+                pass
 
             requests = read_requests(r, clients)
             if requests:
