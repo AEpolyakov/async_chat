@@ -11,4 +11,9 @@ def echo_client():
 
 
 if __name__ == '__main__':
-    echo_client()
+    try:
+        echo_client()
+    except KeyboardInterrupt:
+        print('Aborted by user')
+    except Exception as ex:
+        print(f'{ex}')

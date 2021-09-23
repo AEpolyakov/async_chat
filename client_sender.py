@@ -6,11 +6,14 @@ def echo_client():
         sock.connect(('localhost', 7777))  # Соединиться с сервером
         while True:
             msg = input('Ваше сообщение: ')
-            if msg == 'exit':
-                break
-            elif msg:
+            if msg:
                 sock.send(msg.encode('unicode_escape'))  # Отправить!
 
 
 if __name__ == '__main__':
-    echo_client()
+    try:
+        echo_client()
+    except KeyboardInterrupt:
+        print('Aborted by user')
+    except Exception as ex:
+        print(f'{ex}')

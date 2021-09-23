@@ -68,19 +68,17 @@ def non_blocking_socket(address):
     sock.bind(address)
     sock.listen(5)
     sock.settimeout(0.2)
-    print(f'{address}')
     return sock
 
 
 def read_requests(clients, all_clients):
-    responses = []
+    responses = {}
 
     for sock in clients:
         try:
             data = sock.recv(1024).decode('unicode_escape')
-            responses.append(data)
-            print(f'{responses=}')
-        except Exception:
+            responses[sock] = data
+        except Exception as ex:
             print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
             all_clients.remove(sock)
     return responses
@@ -89,16 +87,15 @@ def read_requests(clients, all_clients):
 def write_responses(requests, clients, all_clients):
 
     for sock in clients:
+        try:
+            for request in requests.values():
+                response = request.encode('unicode_escape')
+                sock.send(response)
 
-            try:
-                for request in requests:
-                    response = request.encode('unicode_escape')
-                    sock.send(response)
-
-            except Exception:
-                print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                sock.close()
-                all_clients.remove(sock)
+        except Exception as ex:
+            print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+            sock.close()
+            all_clients.remove(sock)
 
 
 def main_non_blocking():
