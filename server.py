@@ -3,6 +3,7 @@ import time
 import sys
 import json
 from log.server_log_config import server_logger, log
+import select
 
 
 @log
@@ -62,10 +63,73 @@ def main():
     server_accept(server_socket)
 
 
+def non_blocking_socket(address):
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.bind(address)
+    sock.listen(5)
+    sock.settimeout(0.2)
+    return sock
+
+
+def read_requests(clients, all_clients):
+    responses = {}
+
+    for sock in clients:
+        try:
+            data = sock.recv(1024).decode('unicode_escape')
+            responses[sock] = data
+        except Exception as ex:
+            print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+            all_clients.remove(sock)
+    return responses
+
+
+def write_responses(requests, clients, all_clients):
+
+    for sock in clients:
+        try:
+            for request in requests.values():
+                response = request.encode('unicode_escape')
+                sock.send(response)
+
+        except Exception as ex:
+            print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+            sock.close()
+            all_clients.remove(sock)
+
+
+def main_non_blocking():
+    socket_address = get_args(sys.argv[1:])
+
+    clients = []
+    server_socket = non_blocking_socket(socket_address)
+
+    while True:
+        try:
+            connection, address = server_socket.accept()
+        except OSError as e:
+            pass
+        else:
+            print("Получен запрос на соединение с %s" % str(address))
+            clients.append(connection)
+        finally:
+            wait = 10
+            w, r = [], []
+            try:
+                r, w, e = select.select(clients, clients, [], wait)
+            except Exception as ex:
+                pass
+
+            requests = read_requests(r, clients)
+            if requests:
+                write_responses(requests, w, clients)
+
+
 if __name__ == '__main__':
     try:
-        main()
+        # main()
+        main_non_blocking()
     except KeyboardInterrupt:
         server_logger.info('stopped by user')
-    except Exception:
-        server_logger.critical('failed to start server')
+    except Exception as ex:
+        server_logger.critical(f'failed to start server, {ex}')
