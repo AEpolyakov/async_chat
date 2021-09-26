@@ -91,7 +91,6 @@ def write_responses(requests, clients, all_clients):
             for request in requests.values():
                 response = request.encode('unicode_escape')
                 sock.send(response)
-
         except Exception as ex:
             print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
             sock.close()
@@ -110,14 +109,15 @@ def main_non_blocking():
         except OSError as e:
             pass
         else:
-            print("Получен запрос на соединение с %s" % str(address))
             clients.append(connection)
+            print(f"Получен запрос на соединение с %{address} {clients=}")
         finally:
             wait = 10
             w, r = [], []
             try:
                 r, w, e = select.select(clients, clients, [], wait)
             except Exception as ex:
+                print('failed')
                 pass
 
             requests = read_requests(r, clients)

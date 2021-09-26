@@ -3,6 +3,7 @@ import time
 import json
 import sys
 from log.client_log_config import client_logger, log
+from threading import Thread
 
 
 @log
@@ -12,17 +13,34 @@ def socket_init():
     return client_socket
 
 
-def socket_connect(client_socket, address, port):
-    client_socket.connect((address, port))
+def make_json_byte_message(mes_from: str, mes_to=None, message=None):
+    result = {
+        "action": "presence",
+        "time": time.time(),
+        "from": {
+            "account_name": mes_from,
+        },
+    }
+    if message:
+        result["action"] = "msg"
+        result["to"] = mes_to
+        result["encoding"] = "unicode_escape"
+        result["message"] = message
 
-    presence = make_json_byte_presence()
-    client_socket.send(presence)
+    return json.dumps(result).encode('unicode_escape')
 
-    response = client_socket.recv(1024).decode('unicode_escape')
-    client_socket.close()
 
-    client_logger.info(f'connect {address=} {port=} send={presence}')
-    return response
+def client_send(sock, message):
+    sock.send(message)
+    return client_receive(sock)
+
+
+def client_receive(sock):
+    try:
+        raw = sock.recv(1024).decode('unicode_escape')
+        return json.loads(raw)
+    except Exception:
+        pass
 
 
 def make_json_byte_presence():
@@ -49,12 +67,37 @@ def get_args(args):
     return result.address, result.port
 
 
+def listener(sock):
+    while True:
+        response = client_receive(sock)
+        if response:
+            print(f"\n{response['from']['account_name']} says: {response['message']}\nyour message:", end='')
+
+
+def user_interface(sock):
+    login = input('your login:')
+    while True:
+        message = input('your message:')
+        if message:
+            json_package = make_json_byte_message(mes_from=login, message=message)
+            response = client_send(sock, json_package)
+            # print(parse_response(response))
+
+
+def parse_response(response):
+    return f"\n{response['from']} says: {response['message']}"
+
+
 def main():
     address, port = get_args(sys.argv[1:])
 
     client_socket = socket_init()
-    server_response = socket_connect(client_socket, address, port)
-    client_logger.info(f'{server_response=}')
+    client_socket.connect((address, port))
+
+    t1 = Thread(target=listener, args=(client_socket, ))
+    t2 = Thread(target=user_interface, args=(client_socket, ))
+    t1.start()
+    t2.start()
 
 
 if __name__ == '__main__':
