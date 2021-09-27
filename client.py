@@ -4,6 +4,7 @@ import json
 import sys
 from log.client_log_config import client_logger, log
 from threading import Thread
+import argparse
 
 
 @log
@@ -13,7 +14,21 @@ def socket_init():
     return client_socket
 
 
-def make_json_byte_message(mes_from: str, mes_to=None, message=None):
+def make_message(mes_from: str, mes_to=None, message=None):
+    result = {
+        "action": "msg",
+        "time": time.time(),
+        "from": {
+            "account_name": mes_from,
+        },
+        "mess_to": mes_to,
+        "message": message,
+        "encoding": "unicode_escape",
+    }
+    return make_json(result)
+
+
+def make_presence(mes_from: str):
     result = {
         "action": "presence",
         "time": time.time(),
@@ -21,13 +36,11 @@ def make_json_byte_message(mes_from: str, mes_to=None, message=None):
             "account_name": mes_from,
         },
     }
-    if message:
-        result["action"] = "msg"
-        result["to"] = mes_to
-        result["encoding"] = "unicode_escape"
-        result["message"] = message
+    return make_json(result)
 
-    return json.dumps(result).encode('unicode_escape')
+
+def make_json(string: dict):
+    return json.dumps(string).encode('unicode_escape')
 
 
 def client_send(sock, message):
@@ -43,24 +56,9 @@ def client_receive(sock):
         pass
 
 
-def make_json_byte_presence():
-    presence = {
-        "action": "presence",
-        "time": time.time(),
-        "type": "status",
-        "user": {
-            "account_name": "test_user",
-            "status": "online",
-        }
-    }
-    return json.dumps(presence).encode('unicode_escape')
-
-
 def get_args(args):
-    import argparse
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('address', type=str, default='', help="address to connect")
+    parser.add_argument('address', nargs='?', type=str, default='', help="address to connect")
     parser.add_argument('port', nargs='?', type=int, default=7777, help="port to connect")
     result = parser.parse_args(args)
 
@@ -70,18 +68,23 @@ def get_args(args):
 def listener(sock):
     while True:
         response = client_receive(sock)
-        if response:
-            print(f"\n{response['from']['account_name']} says: {response['message']}\nyour message:", end='')
+        try:
+            print(f"\n{response['from']['account_name']} says: {response['message']}\n>>", end='')
+        except Exception:
+            pass
 
 
 def user_interface(sock):
     login = input('your login:')
+    presence = make_presence(login)
+    # client_send(sock, presence)
+
+    message_to = input('message to (empty to everyone):')
     while True:
-        message = input('your message:')
+        message = input('>>')
         if message:
-            json_package = make_json_byte_message(mes_from=login, message=message)
+            json_package = make_message(mes_from=login, mes_to=message_to, message=message)
             response = client_send(sock, json_package)
-            # print(parse_response(response))
 
 
 def parse_response(response):
