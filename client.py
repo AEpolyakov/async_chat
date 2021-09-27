@@ -2,58 +2,82 @@ from socket import *
 import time
 import json
 import sys
-from log.client_log_config import client_logger, log
+from log.client_log_config import client_logger
 from threading import Thread
 import argparse
 
 
-@log
-def socket_init():
-    client_socket = socket(AF_INET, SOCK_STREAM)
-    client_logger.info('init ok')
-    return client_socket
+class Client:
+    def __init__(self, address):
+        self.address = address
+        self.socket = socket(AF_INET, SOCK_STREAM)
+        self.socket.connect(self.address)
+        self.login = input('enter login:')
+        self.message_to = ''
 
+    def make_message(self, message=None):
+        result = {
+            "action": "msg",
+            "time": time.time(),
+            "from": {
+                "account_name": self.login,
+            },
+            "mess_to": self.message_to,
+            "message": message,
+            "encoding": "unicode_escape",
+        }
+        return self.make_json(result)
 
-def make_message(mes_from: str, mes_to=None, message=None):
-    result = {
-        "action": "msg",
-        "time": time.time(),
-        "from": {
-            "account_name": mes_from,
-        },
-        "mess_to": mes_to,
-        "message": message,
-        "encoding": "unicode_escape",
-    }
-    return make_json(result)
+    def make_presence(self):
+        result = {
+            "action": "presence",
+            "time": time.time(),
+            "from": {
+                "account_name": self.login,
+            },
+        }
+        return self.make_json(result)
 
+    @staticmethod
+    def make_json(string: dict):
+        return json.dumps(string).encode('unicode_escape')
 
-def make_presence(mes_from: str):
-    result = {
-        "action": "presence",
-        "time": time.time(),
-        "from": {
-            "account_name": mes_from,
-        },
-    }
-    return make_json(result)
+    def client_send(self, message):
+        try:
+            self.socket.send(message)
+        except Exception:
+            print(f'failed to send')
 
+    def client_receive(self):
+        try:
+            raw = self.socket.recv(1024).decode('unicode_escape')
+            return json.loads(raw)
+        except Exception as ex:
+            pass
 
-def make_json(string: dict):
-    return json.dumps(string).encode('unicode_escape')
+    def listener(self):
+        while True:
+            response = self.client_receive()
+            if response:
+                if response["action"] == "msg":
+                    print(f"\n{response['from']['account_name']} says: {response['message']}\n>>", end='')
 
+    def user_interface(self):
+        while True:
+            message = input('>>')
+            if message:
+                json_package = self.make_message(message=message)
+                self.client_send(json_package)
 
-def client_send(sock, message):
-    sock.send(message)
-    return client_receive(sock)
+    @staticmethod
+    def parse_response(response):
+        return f"\n{response['from']} says: {response['message']}"
 
-
-def client_receive(sock):
-    try:
-        raw = sock.recv(1024).decode('unicode_escape')
-        return json.loads(raw)
-    except Exception:
-        pass
+    def start(self):
+        t1 = Thread(target=self.listener)
+        t2 = Thread(target=self.user_interface)
+        t1.start()
+        t2.start()
 
 
 def get_args(args):
@@ -65,42 +89,10 @@ def get_args(args):
     return result.address, result.port
 
 
-def listener(sock):
-    while True:
-        response = client_receive(sock)
-        try:
-            print(f"\n{response['from']['account_name']} says: {response['message']}\n>>", end='')
-        except Exception:
-            pass
-
-
-def user_interface(sock):
-    login = input('your login:')
-    presence = make_presence(login)
-    # client_send(sock, presence)
-
-    message_to = input('message to (empty to everyone):')
-    while True:
-        message = input('>>')
-        if message:
-            json_package = make_message(mes_from=login, mes_to=message_to, message=message)
-            response = client_send(sock, json_package)
-
-
-def parse_response(response):
-    return f"\n{response['from']} says: {response['message']}"
-
-
 def main():
     address, port = get_args(sys.argv[1:])
-
-    client_socket = socket_init()
-    client_socket.connect((address, port))
-
-    t1 = Thread(target=listener, args=(client_socket, ))
-    t2 = Thread(target=user_interface, args=(client_socket, ))
-    t1.start()
-    t2.start()
+    client = Client((address, port))
+    client.start()
 
 
 if __name__ == '__main__':
@@ -108,5 +100,5 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print('stopped by user')
-    except Exception:
+    except Exception as ex:
         client_logger.critical(f'failed to connect to server')

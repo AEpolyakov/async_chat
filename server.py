@@ -86,6 +86,7 @@ class Server:
 
         for sock in clients:
             try:
+                sock.setblocking(True)
                 data = sock.recv(1024).decode('unicode_escape')
                 responses[sock] = data
             except Exception as ex:
@@ -100,6 +101,7 @@ class Server:
             try:
                 for request in requests.values():
                     response = request.encode('unicode_escape')
+                    sock.setblocking(True)
                     sock.send(response)
 
             except Exception as ex:
