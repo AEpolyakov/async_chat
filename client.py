@@ -74,6 +74,8 @@ class Client:
         return f"\n{response['from']} says: {response['message']}"
 
     def start(self):
+        self.socket.send(self.make_presence())
+
         t1 = Thread(target=self.listener)
         t2 = Thread(target=self.user_interface)
         t1.start()

@@ -80,15 +80,22 @@ class Server:
         sock.settimeout(0.2)
         return sock
 
-    @staticmethod
-    def read_requests(clients, all_clients):
+    def analyse_response(self, responses: dict):
+        try:
+            for key in responses:
+                if responses[key]["action"] == "presence":
+                    print(f'{responses[key]["from"]}')
+        except Exception:
+            pass
+
+    def read_requests(self, clients, all_clients):
         responses = {}
 
         for sock in clients:
             try:
-                sock.setblocking(True)
                 data = sock.recv(1024).decode('unicode_escape')
                 responses[sock] = data
+                self.analyse_response(responses)
             except Exception as ex:
                 print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 all_clients.remove(sock)
@@ -101,9 +108,7 @@ class Server:
             try:
                 for request in requests.values():
                     response = request.encode('unicode_escape')
-                    sock.setblocking(True)
                     sock.send(response)
-
             except Exception as ex:
                 print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
