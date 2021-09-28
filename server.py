@@ -69,7 +69,7 @@ class Server:
             client_message = raw.decode('unicode_escape')
             return json.loads(client_message)
         except Exception:
-            server_logger.error(f'failed to decode message: {raw}')
+            print(f'failed to decode message: {raw}')
         return None
 
     @staticmethod
@@ -83,8 +83,10 @@ class Server:
     def analyse_response(self, responses: dict):
         try:
             for key in responses:
-                if responses[key]["action"] == "presence":
-                    print(f'{responses[key]["from"]}')
+                name = json.loads(responses[key])["from"]["account_name"]
+                print(f'{name=}')
+                client = self.clients[key]
+                print(f'{client=}')
         except Exception:
             pass
 
