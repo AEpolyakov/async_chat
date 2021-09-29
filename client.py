@@ -13,7 +13,7 @@ class Client:
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.socket.connect(self.address)
         self.login = input('enter login:')
-        self.message_to = ''
+        self.message_to = input('whom to send (blank for everyone):')
 
     def make_message(self, message=None):
         result = {
@@ -103,4 +103,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('stopped by user')
     except Exception as ex:
-        client_logger.critical(f'failed to connect to server')
+        print(f'failed to connect to server')

@@ -6,21 +6,10 @@ from log.server_log_config import server_logger, log
 import select
 
 
-# class Clients:
-#     def __init__(self):
-#         self.clients = []
-#
-#     def append(self, connect):
-#         self.clients.append({
-#             "connect": connect,
-#             "name": '',
-#         })
-
-
 class Server:
     def __init__(self, address):
         self.socket = self.non_blocking_socket(address)
-        self.clients = []
+        self.clients = {}
         self.connections = []
 
     def start(self):
@@ -31,25 +20,18 @@ class Server:
                 pass
             else:
                 print("Получен запрос на соединение с %s" % str(address))
-                self.clients.append({
-                    "connection": connection,
-                    "name": "",
-                })
+                self.connections.append(connection)
             finally:
                 wait = 10
                 w, r = [], []
-                connections = self.get_connections()
                 try:
-                    r, w, e = select.select(connections, connections, [], wait)
+                    r, w, e = select.select(self.connections, self.connections, [], wait)
                 except Exception as ex:
                     pass
 
-                requests = self.read_requests(r, self.connections)
+                requests = self.read_requests(r)
                 if requests:
-                    self.write_responses(requests, w, self.connections)
-
-    def get_connections(self):
-        return [client["connection"] for client in self.clients]
+                    self.write_responses(requests, w)
 
     @staticmethod
     def get_answer(action=None):
@@ -83,38 +65,40 @@ class Server:
     def analyse_response(self, responses: dict):
         try:
             for key in responses:
-                name = json.loads(responses[key])["from"]["account_name"]
-                print(f'{name=}')
-                client = self.clients[key]
-                print(f'{client=}')
+                decoded_message = responses[key]
+                if decoded_message["action"] == "presence":
+                    name = decoded_message["from"]["account_name"]
+                    self.clients[key] = name
+                    print(f'now on server: {self.clients.values()}')
         except Exception:
             pass
 
-    def read_requests(self, clients, all_clients):
+    def read_requests(self, clients):
         responses = {}
 
         for sock in clients:
             try:
-                data = sock.recv(1024).decode('unicode_escape')
-                responses[sock] = data
+                responses[sock] = json.loads(sock.recv(1024).decode('unicode_escape'))
                 self.analyse_response(responses)
             except Exception as ex:
                 print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                all_clients.remove(sock)
+                sock.close()
+                self.connections.remove(sock)
+                self.clients.pop(sock)
         return responses
 
-    @staticmethod
-    def write_responses(requests, clients, all_clients):
+    def write_responses(self, requests, clients):
 
         for sock in clients:
             try:
                 for request in requests.values():
-                    response = request.encode('unicode_escape')
+                    response = json.dumps(request).encode('unicode_escape')
                     sock.send(response)
             except Exception as ex:
                 print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
-                all_clients.remove(sock)
+                self.connections.remove(sock)
+                self.clients.pop(sock)
 
 
 def get_args(args):
@@ -137,6 +121,6 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        server_logger.info('stopped by user')
+        print('stopped by user')
     except Exception as ex:
-        server_logger.critical(f'failed to start server, {ex}')
+        print(f'failed to start server, {ex}')
