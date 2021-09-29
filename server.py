@@ -11,8 +11,10 @@ class Server:
         self.socket = self.non_blocking_socket(address)
         self.clients = {}
         self.connections = []
+        server_logger.info(f'init successful {address}')
 
     def start(self):
+        server_logger.info('server started')
         while True:
             try:
                 connection, address = self.socket.accept()
@@ -51,7 +53,7 @@ class Server:
             client_message = raw.decode('unicode_escape')
             return json.loads(client_message)
         except Exception:
-            print(f'failed to decode message: {raw}')
+            server_logger.error(f'failed to decode message: {raw}')
         return None
 
     @staticmethod
@@ -81,7 +83,7 @@ class Server:
                 responses[sock] = json.loads(sock.recv(1024).decode('unicode_escape'))
                 self.analyse_response(responses)
             except Exception as ex:
-                print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+                server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
@@ -93,7 +95,6 @@ class Server:
             try:
                 for request in requests.values():
                     try:
-                        print(f'{self.clients[sock]=} {type(request)} {request=}')
                         if request["mess_to"] in ['', self.clients[sock]]:
                             response = json.dumps(request).encode('unicode_escape')
                             sock.send(response)
@@ -101,7 +102,7 @@ class Server:
                         pass
 
             except Exception as ex:
-                print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+                server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
@@ -127,6 +128,6 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('stopped by user')
+        server_logger.info('stopped by user')
     except Exception as ex:
-        print(f'failed to start server, {ex}')
+        server_logger.error(f'failed to start server, {ex}')
