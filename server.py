@@ -6,130 +6,128 @@ from log.server_log_config import server_logger, log
 import select
 
 
-@log
-def socket_init(address, port):
-    s = socket(AF_INET, SOCK_STREAM)
-    s.bind((address, port))
-    s.listen(5)
-    server_logger.info(f'init {address=} {port=}')
-    return s
+class Server:
+    def __init__(self, address):
+        self.socket = self.non_blocking_socket(address)
+        self.clients = {}
+        self.connections = []
+        server_logger.info(f'init successful {address}')
 
+    def start(self):
+        server_logger.info('server started')
+        while True:
+            try:
+                connection, address = self.socket.accept()
+            except OSError as e:
+                pass
+            else:
+                print("Получен запрос на соединение с %s" % str(address))
+                self.connections.append(connection)
+            finally:
+                wait = 10
+                w, r = [], []
+                try:
+                    r, w, e = select.select(self.connections, self.connections, [], wait)
+                except Exception as ex:
+                    pass
 
-def get_answer(action=None):
-    if action == 'presence':
+                requests = self.read_requests(r)
+                if requests:
+                    self.write_responses(requests, w)
+
+    @staticmethod
+    def get_answer(action=None):
+        if action == 'presence':
+            return {
+                "response": 200,
+                "alert": "ok",
+            }
         return {
-            "response": 200,
-            "alert": "Необязательное сообщение/уведомление",
-        }
-    return {
-            "response": 400,
-            "alert": "bad request",
-        }
+                "response": 400,
+                "alert": "bad request",
+            }
 
+    @staticmethod
+    def decode_message(raw):
+        try:
+            client_message = raw.decode('unicode_escape')
+            return json.loads(client_message)
+        except Exception:
+            server_logger.error(f'failed to decode message: {raw}')
+        return None
 
-def decode_message(raw):
-    try:
-        client_message = raw.decode('unicode_escape')
-        return json.loads(client_message)
-    except Exception:
-        server_logger.error(f'failed to decode message: {raw}')
-    return None
+    @staticmethod
+    def non_blocking_socket(address):
+        sock = socket(AF_INET, SOCK_STREAM)
+        sock.bind(address)
+        sock.listen(5)
+        sock.settimeout(0.2)
+        return sock
 
+    def analyse_response(self, responses: dict):
+        try:
+            for key in responses:
+                decoded_message = responses[key]
+                if decoded_message["action"] == "presence":
+                    name = decoded_message["from"]["account_name"]
+                    self.clients[key] = name
+                    print(f'now on server: {self.clients.values()}')
+        except Exception:
+            pass
 
-def server_accept(s):
-    while True:
-        client, client_address = s.accept()
-        client_message = decode_message(client.recv(1024))
-        answer = get_answer(client_message['action'])
-        server_logger.info(f'{client_message=}; {answer=}')
-        client.send(json.dumps(answer).encode('unicode_escape'))
-        client.close()
+    def read_requests(self, clients):
+        responses = {}
+
+        for sock in clients:
+            try:
+                responses[sock] = json.loads(sock.recv(1024).decode('unicode_escape'))
+                self.analyse_response(responses)
+            except Exception as ex:
+                server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+                sock.close()
+                self.connections.remove(sock)
+                self.clients.pop(sock)
+        return responses
+
+    def write_responses(self, requests, clients):
+
+        for sock in clients:
+            try:
+                for request in requests.values():
+                    try:
+                        if request["mess_to"] in ['', self.clients[sock]]:
+                            response = json.dumps(request).encode('unicode_escape')
+                            sock.send(response)
+                    except Exception:
+                        pass
+
+            except Exception as ex:
+                server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
+                sock.close()
+                self.connections.remove(sock)
+                self.clients.pop(sock)
 
 
 def get_args(args):
     import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', type=str, default='', help="socket address")
     parser.add_argument('-p', type=int, default=7777, help="socket port")
     result = parser.parse_args(args)
-
     return result.a, result.p
 
 
 def main():
-    socket_address, socket_port = get_args(sys.argv[1:])
-    server_socket = socket_init(socket_address, socket_port)
-    server_accept(server_socket)
-
-
-def non_blocking_socket(address):
-    sock = socket(AF_INET, SOCK_STREAM)
-    sock.bind(address)
-    sock.listen(5)
-    sock.settimeout(0.2)
-    return sock
-
-
-def read_requests(clients, all_clients):
-    responses = {}
-
-    for sock in clients:
-        try:
-            data = sock.recv(1024).decode('unicode_escape')
-            responses[sock] = data
-        except Exception as ex:
-            print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-            all_clients.remove(sock)
-    return responses
-
-
-def write_responses(requests, clients, all_clients):
-
-    for sock in clients:
-        try:
-            for request in requests.values():
-                response = request.encode('unicode_escape')
-                sock.send(response)
-
-        except Exception as ex:
-            print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-            sock.close()
-            all_clients.remove(sock)
-
-
-def main_non_blocking():
     socket_address = get_args(sys.argv[1:])
 
-    clients = []
-    server_socket = non_blocking_socket(socket_address)
-
-    while True:
-        try:
-            connection, address = server_socket.accept()
-        except OSError as e:
-            pass
-        else:
-            print("Получен запрос на соединение с %s" % str(address))
-            clients.append(connection)
-        finally:
-            wait = 10
-            w, r = [], []
-            try:
-                r, w, e = select.select(clients, clients, [], wait)
-            except Exception as ex:
-                pass
-
-            requests = read_requests(r, clients)
-            if requests:
-                write_responses(requests, w, clients)
+    server = Server(socket_address)
+    server.start()
 
 
 if __name__ == '__main__':
     try:
-        # main()
-        main_non_blocking()
+        main()
     except KeyboardInterrupt:
         server_logger.info('stopped by user')
     except Exception as ex:
-        server_logger.critical(f'failed to start server, {ex}')
+        server_logger.error(f'failed to start server, {ex}')
