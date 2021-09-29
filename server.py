@@ -92,8 +92,14 @@ class Server:
         for sock in clients:
             try:
                 for request in requests.values():
-                    response = json.dumps(request).encode('unicode_escape')
-                    sock.send(response)
+                    try:
+                        print(f'{self.clients[sock]=} {type(request)} {request=}')
+                        if request["mess_to"] in ['', self.clients[sock]]:
+                            response = json.dumps(request).encode('unicode_escape')
+                            sock.send(response)
+                    except Exception:
+                        pass
+
             except Exception as ex:
                 print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
