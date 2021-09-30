@@ -60,12 +60,15 @@ def host_range_ping_tab(ip_start: str, ip_range: int):
 
 def start_clients(client_list: list):
     for client in client_list:
-        process = subprocess.Popen([f'python {client}'], stdout=subprocess.PIPE, shell=True)
-        process.communicate(input=b"u1")
-        process.communicate(input=b"\n")
-        string = process.stdout.read().decode('utf-8')
+        process = subprocess.Popen([f'python {client}'],
+                                   stdout=subprocess.PIPE,
+                                   stdin=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=True)
+        string = process.communicate(input=b'exit')
         print(f'{string=}\n')
 
 
-client_list = ['client.py']
+port = 7777
+client_list = [f'client.py -l u4 -p {port}', f'client.py -l u5 -t u1 -p {port}']
 start_clients(client_list)
