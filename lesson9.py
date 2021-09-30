@@ -1,8 +1,9 @@
-print('\n#### задание 1 ####\n')
+# задание 1
 import subprocess
 import ipaddress
 import re
 import tabulate
+import os
 
 
 def host_ping(ip_list: list):
@@ -17,10 +18,10 @@ def host_ping(ip_list: list):
 
 
 ip_list = ['127.0.0.1', '127.0.0.2', '192.168.142.4', '192.168.142.200']
-host_ping(ip_list)
+# host_ping(ip_list)
 
 
-print('\n#### задание 2 ####\n')
+# задание 2
 
 
 def host_range_ping(ip: str, ip_range: int):
@@ -29,9 +30,9 @@ def host_range_ping(ip: str, ip_range: int):
     host_ping(ip_list)
 
 
-host_range_ping('127.0.0.1', 5)
+# host_range_ping('127.0.0.1', 5)
 
-print('\n#### задание 3 ####\n')
+# задание 3
 
 def host_range_ping_tab(ip_start: str, ip_range: int):
 
@@ -52,5 +53,19 @@ def host_range_ping_tab(ip_start: str, ip_range: int):
     print(tabulate.tabulate(result_dict, headers="keys"))
 
 
-host_range_ping_tab('127.0.0.253', 5)
+# host_range_ping_tab('127.0.0.253', 5)
 
+
+# задание 4
+
+def start_clients(client_list: list):
+    for client in client_list:
+        process = subprocess.Popen([f'python {client}'], stdout=subprocess.PIPE, shell=True)
+        process.communicate(input=b"u1")
+        process.communicate(input=b"\n")
+        string = process.stdout.read().decode('utf-8')
+        print(f'{string=}\n')
+
+
+client_list = ['client.py']
+start_clients(client_list)
