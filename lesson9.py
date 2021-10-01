@@ -55,7 +55,7 @@ def host_range_ping(ip_range: str, printable=True):
         return host_ping(host_list=ip_list, printable=printable)
 
 
-# host_range_ping('127.0.0.0/27')  # маска на 27 бит для адресов с 0 до 31
+host_range_ping('127.0.0.0/27')  # маска на 27 бит для адресов с 0 до 31
 
 # задание 3
 
@@ -65,7 +65,7 @@ def host_range_ping_tab(ip_range: str):
     print(tabulate.tabulate(result_dict, headers="keys"))
 
 
-# host_range_ping_tab('127.0.0.0/27')
+host_range_ping_tab('127.0.0.0/27')
 
 
 # задание 4
@@ -94,4 +94,4 @@ def start_clients(receiver_number=1, sender_number=0):
         print(f'{string}')
 
 
-# start_clients(receiver_number=2, sender_number=2)
+start_clients(receiver_number=2, sender_number=2)
