@@ -95,7 +95,9 @@ class Server:
             try:
                 for request in requests.values():
                     try:
-                        if request["mess_to"] in ['', self.clients[sock]]:
+                        print(f'{self.clients[sock]=} {request["from"]["account_name"]=} {request["message"]}')
+                        if request["mess_to"] in ['', self.clients[sock]] and \
+                                request["from"]["account_name"] != self.clients[sock]:
                             response = json.dumps(request).encode('unicode_escape')
                             sock.send(response)
                     except Exception:
