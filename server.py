@@ -84,7 +84,7 @@ class Server:
                 self.analyse_response(responses)
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                sock.close()
+                # sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
         return responses
@@ -95,7 +95,9 @@ class Server:
             try:
                 for request in requests.values():
                     try:
-                        if request["mess_to"] in ['', self.clients[sock]]:
+                        print(f'{self.clients[sock]=} {request["from"]["account_name"]=} {request["message"]}')
+                        if request["mess_to"] in ['', self.clients[sock]] and \
+                                request["from"]["account_name"] != self.clients[sock]:
                             response = json.dumps(request).encode('unicode_escape')
                             sock.send(response)
                     except Exception:
@@ -103,7 +105,7 @@ class Server:
 
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                sock.close()
+                # sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
 

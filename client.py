@@ -69,19 +69,14 @@ class Client:
     def client_sender(self):
         message = input('>>')
         if message:
-            if message == 'exit':
-                self.is_running = False
-                self.socket.close()
-            else:
-                json_package = self.make_message(message=message)
-                self.client_send(json_package)
+            json_package = self.make_message(message=message)
+            self.client_send(json_package)
 
     def client_receiver(self):
         response = self.client_receive()
         if response:
             if response["action"] == "msg":
                 print(f"\n{response['from']['account_name']} says: {response['message']}\n>>", end='')
-
 
     @staticmethod
     def parse_response(response):
@@ -104,14 +99,14 @@ class Client:
 
 def get_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', type=str, default='', help="address to connect")
-    parser.add_argument('-p', type=int, default=7777, help="port to connect")
-    parser.add_argument('-l', type=str, default='anonymous', help="your login")
-    parser.add_argument('-t', type=str, default='', help="send to")
-    parser.add_argument('-m', type=str, default='', help="mode('r'=read, 's'=send, default=send/read)")
+    parser.add_argument('-address', type=str, default='', help="address to connect")
+    parser.add_argument('-port', type=int, default=7777, help="port to connect")
+    parser.add_argument('-login', type=str, default='anonymous', help="your login")
+    parser.add_argument('-to', type=str, default='', help="send to")
+    parser.add_argument('-mode', type=str, default='', help="mode('r'=read, 's'=send, default=send/read)")
     result = parser.parse_args(args)
 
-    return result.a, result.p, result.l, result.t, result.m
+    return result.address, result.port, result.login, result.to, result.mode
 
 
 def main():
