@@ -52,7 +52,7 @@ def host_range_ping(ip_range: str, printable=True):
         return host_ping(host_list=ip_list, printable=printable)
 
 
-host_range_ping('127.0.0.0/27')
+host_range_ping('127.0.0.0/27')  # маска на 27 бит для адресов с 0 до 31
 
 # задание 3
 
@@ -67,17 +67,28 @@ host_range_ping_tab('127.0.0.0/27')
 
 # задание 4
 
-def start_clients(client_list: list):
-    for client in client_list:
-        process = subprocess.Popen([f'python {client}'],
+def start_clients(receiver_number=1, sender_number=0):
+    port = 7777
+
+    for cr in range(receiver_number):
+        process = subprocess.Popen([f'python client.py -port {port} -login user{cr}_from_script -mode r'],
                                    stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
-                                   shell=True)
-        string = process.communicate(input=b'exit')
-        print(f'{string=}\n')
+                                   shell=True,
+                                   )
+        string = process.communicate()
+        print(f'{string}')
+
+    for cs in range(sender_number):
+        process = subprocess.Popen([f'python client.py -port {port} -login user{cs}_from_script -mode s'],
+                                   stdout=subprocess.PIPE,
+                                   stdin=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=True,
+                                   )
+        string = process.communicate(input='hi from script'.encode())[0].decode()
+        print(f'{string}')
 
 
-port = 7777
-client_list = [f'client.py -l user4 -p {port}', f'client.py -l user5 -t user1 -p {port}']
-start_clients(client_list)
+start_clients(receiver_number=2, sender_number=2)
