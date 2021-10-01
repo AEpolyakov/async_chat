@@ -84,7 +84,7 @@ class Server:
                 self.analyse_response(responses)
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                # sock.close()
+                sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
         return responses
@@ -105,7 +105,7 @@ class Server:
 
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
-                # sock.close()
+                sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
 
