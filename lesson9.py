@@ -11,13 +11,16 @@ def host_ping(host_list: list, printable=True):
                    "unreachable": []}
 
     for host in host_list:
+        ip_address = ''
         try:
             ip_address = ipaddress.ip_address(host)
-        except:
-            try:
-                ip_address = ipaddress.ip_address(socket.gethostbyname(host))
-            except:
-                ip_address = ''
+        except Exception as ex:
+            pass
+
+        try:
+            ip_address = ipaddress.ip_address(socket.gethostbyname(host))
+        except Exception as ex:
+            pass
 
         process = subprocess.Popen(['ping', '-c', '1', str(ip_address)], stdout=subprocess.PIPE)
         string = process.stdout.read().decode('utf-8')
@@ -52,7 +55,7 @@ def host_range_ping(ip_range: str, printable=True):
         return host_ping(host_list=ip_list, printable=printable)
 
 
-host_range_ping('127.0.0.0/27')  # маска на 27 бит для адресов с 0 до 31
+# host_range_ping('127.0.0.0/27')  # маска на 27 бит для адресов с 0 до 31
 
 # задание 3
 
@@ -62,7 +65,7 @@ def host_range_ping_tab(ip_range: str):
     print(tabulate.tabulate(result_dict, headers="keys"))
 
 
-host_range_ping_tab('127.0.0.0/27')
+# host_range_ping_tab('127.0.0.0/27')
 
 
 # задание 4
@@ -91,4 +94,4 @@ def start_clients(receiver_number=1, sender_number=0):
         print(f'{string}')
 
 
-start_clients(receiver_number=2, sender_number=2)
+# start_clients(receiver_number=2, sender_number=2)
