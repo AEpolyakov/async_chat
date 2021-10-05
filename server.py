@@ -6,9 +6,32 @@ from log.server_log_config import server_logger, log
 import select
 
 
+class PortDescriptor:
+    def __init__(self, name, type_name, default=None):
+        self.name = ' ' + name
+        self.type = type_name
+        self.default = default if default else type_name()
+
+    def __get__(self, instance, cls):
+        return getattr(instance, self.name, self.default)
+
+    def __set__(self, instance, value):
+        if not isinstance(value, self.type):
+            raise TypeError(f"port value must be {self.type}")
+        if value < 0:
+            raise ValueError(f"port value must be positive integer")
+        setattr(instance, self.name, value)
+
+    # def __del__(self):
+    #     raise AttributeError("port delete is forbidden")
+
+
 class Server:
-    def __init__(self, address):
-        self.socket = self.non_blocking_socket(address)
+    def __init__(self, address, port):
+        self.address = address
+        # self.port = PortDescriptor("port", int, port)
+        self.port = port
+        self.socket = self.non_blocking_socket()
         self.clients = {}
         self.connections = []
         server_logger.info(f'init successful {address}')
@@ -56,10 +79,9 @@ class Server:
             server_logger.error(f'failed to decode message: {raw}')
         return None
 
-    @staticmethod
-    def non_blocking_socket(address):
+    def non_blocking_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
-        sock.bind(address)
+        sock.bind((self.address, self.port))
         sock.listen(5)
         sock.settimeout(0.2)
         return sock
@@ -120,9 +142,9 @@ def get_args(args):
 
 
 def main():
-    socket_address = get_args(sys.argv[1:])
+    socket_address, socket_port = get_args(sys.argv[1:])
 
-    server = Server(socket_address)
+    server = Server(socket_address, socket_port)
     server.start()
 
 
