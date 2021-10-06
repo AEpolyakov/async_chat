@@ -4,32 +4,15 @@ import sys
 import json
 from log.server_log_config import server_logger, log
 import select
-
-
-class PortDescriptor:
-    def __init__(self, name, type_name, default=None):
-        self.name = ' ' + name
-        self.type = type_name
-        self.default = default if default else type_name()
-
-    def __get__(self, instance, cls):
-        return getattr(instance, self.name, self.default)
-
-    def __set__(self, instance, value):
-        if not isinstance(value, self.type):
-            raise TypeError(f"port value must be {self.type}")
-        if value < 0:
-            raise ValueError(f"port value must be positive integer")
-        setattr(instance, self.name, value)
-
-    # def __del__(self):
-    #     raise AttributeError("port delete is forbidden")
+from PortDescriptor import PortDescriptor
 
 
 class Server:
+    port = PortDescriptor("port")
+
     def __init__(self, address, port):
         self.address = address
-        # self.port = PortDescriptor("port", int, port)
+        self.port = port
         self.port = port
         self.socket = self.non_blocking_socket()
         self.clients = {}
@@ -145,6 +128,7 @@ def main():
     socket_address, socket_port = get_args(sys.argv[1:])
 
     server = Server(socket_address, socket_port)
+    print(server.port)
     server.start()
 
 
