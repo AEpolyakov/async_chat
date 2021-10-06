@@ -4,11 +4,16 @@ import sys
 import json
 from log.server_log_config import server_logger, log
 import select
+from PortDescriptor import PortDescriptor
 
 
 class Server:
-    def __init__(self, address):
-        self.socket = self.non_blocking_socket(address)
+    port = PortDescriptor("port")
+
+    def __init__(self, address, port):
+        self.address = address
+        self.port = port
+        self.socket = self.non_blocking_socket()
         self.clients = {}
         self.connections = []
         server_logger.info(f'init successful {address}')
@@ -56,10 +61,9 @@ class Server:
             server_logger.error(f'failed to decode message: {raw}')
         return None
 
-    @staticmethod
-    def non_blocking_socket(address):
+    def non_blocking_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
-        sock.bind(address)
+        sock.bind((self.address, self.port))
         sock.listen(5)
         sock.settimeout(0.2)
         return sock
@@ -120,9 +124,10 @@ def get_args(args):
 
 
 def main():
-    socket_address = get_args(sys.argv[1:])
+    socket_address, socket_port = get_args(sys.argv[1:])
 
-    server = Server(socket_address)
+    server = Server(socket_address, socket_port)
+    print(server.port)
     server.start()
 
 
