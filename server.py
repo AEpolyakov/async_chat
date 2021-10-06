@@ -13,7 +13,6 @@ class Server:
     def __init__(self, address, port):
         self.address = address
         self.port = port
-        self.port = port
         self.socket = self.non_blocking_socket()
         self.clients = {}
         self.connections = []
