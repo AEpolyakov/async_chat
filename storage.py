@@ -1,5 +1,7 @@
 import sqlite3
 import os
+import datetime
+
 
 
 class StorageSQL:
@@ -65,69 +67,65 @@ class StorageSQL:
 
 
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, DateTime
 from sqlalchemy.orm import mapper
 from sqlalchemy.ext.declarative import declarative_base
 
 
-# base = declarative_base()
-#
-#
-# class Client(base):
-#     __tablename__ = 'clients'
-#     id = Column(Integer, primary_key=True)
-#     login = Column(String(50))
-#     info = Column(String(100))
-#
-#     def __init__(self, login, info):
-#         self.login = login
-#         self.info = info
-#
-#     def __repr__(self):
-#         return f'client {self.login}'
-#
-#
-# class StorageAlc:
-#     def __init__(self):
-#         self._create_tables()
-#
-#     @staticmethod
-#     def _create_tables():
-#         engine = create_engine('sqlite:///db.sqlite', echo=True, pool_recycle=7200)
-#
-#         metadata = MetaData()
-#         clients_table = Table('clients', metadata,
-#                               Column('id', Integer, primary_key=True),
-#                               Column('login', String(50)),
-#                               Column('info', String(100))
-#                               )
-#         metadata.create_all(engine)
+base = declarative_base()
 
 
+class Client(base):
+    __tablename__ = 'clients'
+    id = Column(Integer, primary_key=True)
+    login = Column(String(50))
+    info = Column(String(100))
 
+    def __init__(self, login, info):
+        self.login = login
+        self.info = info
+
+    def __repr__(self):
+        return f'client {self.login}'
+
+
+class ClientHistory(base):
+    __tablename__ = 'clients_history'
+    client_id = Column(ForeignKey(Client.id))
+    access_time = Column(DateTime)
+    ip_address = Column(String(32))
+
+    def __init__(self, client, access_time, ip_address):
+        self.client_id = client.id
+        self.access_time = access_time
+        self.ip_address = ip_address
+
+    def __repr__(self):
+        return f'client {self.client_id}'
 
 
 if __name__ == '__main__':
     engine = create_engine('sqlite:///db.sqlite')
-    metadata_obj = MetaData()
 
-    client = Table('client', metadata_obj,
-                   Column('client_id', Integer, primary_key=True),
-                   Column('login', String(50)),
-                   Column('info', String(100))
-                   )
-    # client_contacts = Table('client_contacts', metadata_obj,
-    #                         Column('owner_id', Integer, ForeignKey())
-    #
-    # )
+    base.metadata.create_all(engine)
+    from sqlalchemy.orm import sessionmaker
+
+    Session = sessionmaker()
+
+    Session.configure(bind=engine)
+
+    session = Session()
 
 
 
+    client1 = Client('vasya', 'no info about vasya')
+    client1_entry1 = ClientHistory(client1, datetime.datetime(2021, 10, 10, 19, 17), '192.168.142.4')
+    client1_entry2 = ClientHistory(client1, datetime.datetime(2021, 10, 10, 19, 18), '192.168.142.4')
 
-    # storage = StorageAlc()
+    session.add_all([client1_entry1, client1_entry2])
 
-    # storage = StorageSQL()
-    # # [storage.add_client(i, f'client{i}', f'info about client{i}') for i in range(4)]
-    #
-    # print(storage.select_by_id('clients'))
-    # print(storage.select_by_id('clients_history'))
+    # print(client1)
+    # session.add(client1)
+    # user_from_session = session.query(Client).filter_by(login='vasya').first()
+
+    session.commit()
