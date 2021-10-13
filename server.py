@@ -5,7 +5,8 @@ import json
 from log.server_log_config import server_logger, log
 import select
 from PortDescriptor import PortDescriptor
-from storage import Storage
+from storage import Storage, Client, ClientHistory, ContactList
+import datetime
 
 
 class Server:
@@ -71,6 +72,18 @@ class Server:
         sock.settimeout(0.2)
         return sock
 
+    def get_client(self, message: dict):
+        name = message["from"]["account_name"]
+        client = self.storage.select(Client, 'login', name)
+        return client
+
+    def create_or_update_client(self, message: dict):
+        client = self.get_client(message)  # find client if exist
+        if client is None:
+            self.storage.insert(Client, str(message["from"]["account_name"]), '')  # create if not exist
+            client = self.get_client(message)                                # get id of new client
+        self.storage.insert(ClientHistory, client, datetime.datetime.now(), )
+
     def analyse_response(self, responses: dict):
         try:
             for key in responses:
@@ -79,9 +92,16 @@ class Server:
                     name = decoded_message["from"]["account_name"]
                     self.clients[key] = name
                     print(f'now on server: {self.clients.values()}')
+                    self.create_or_update_client(message=decoded_message)
+                elif decoded_message["action"] == "msg":
+                    client_id = self.get_client(decoded_message).id
+                    print(f'analyse msg {client_id=}')
+                    self.storage.insert(ClientHistory, datetime.datetime.now(), client_id)
                 elif decoded_message["action"] == "get_contacts":
-                    print(f'get contacts')
-        except Exception:
+                    client_id = self.get_client(decoded_message).id
+                    contacts = self.storage.select(ContactList, 'owner_id', client_id)
+                    print(f'get contacts {contacts}')
+        except KeyError:
             pass
 
     def read_requests(self, clients):
