@@ -5,6 +5,7 @@ import json
 from log.server_log_config import server_logger, log
 import select
 from PortDescriptor import PortDescriptor
+from storage import Storage
 
 
 class Server:
@@ -17,12 +18,14 @@ class Server:
         self.clients = {}
         self.connections = []
         server_logger.info(f'init successful {address}')
+        self.storage = Storage()
 
     def start(self):
         server_logger.info('server started')
         while True:
             try:
                 connection, address = self.socket.accept()
+                connection.setblocking(True)
             except OSError as e:
                 pass
             else:
@@ -76,6 +79,8 @@ class Server:
                     name = decoded_message["from"]["account_name"]
                     self.clients[key] = name
                     print(f'now on server: {self.clients.values()}')
+                elif decoded_message["action"] == "get_contacts":
+                    print(f'get contacts')
         except Exception:
             pass
 
@@ -84,13 +89,16 @@ class Server:
 
         for sock in clients:
             try:
-                responses[sock] = json.loads(sock.recv(1024).decode('unicode_escape'))
+                message_from_client = json.loads(sock.recv(1024).decode('unicode_escape'))
+                responses[sock] = message_from_client
+                print(f'{message_from_client=}')
                 self.analyse_response(responses)
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
+                pass
         return responses
 
     def write_responses(self, requests, clients):

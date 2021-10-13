@@ -48,6 +48,7 @@ class Client:
     def client_send(self, message):
         try:
             self.socket.send(message)
+            print(f'sending message {message}')
         except Exception:
             client_logger.error(f'failed to send')
 
@@ -72,6 +73,20 @@ class Client:
             json_package = self.make_message(message=message)
             self.client_send(json_package)
 
+    def client_get_contacts(self):
+        message_dict = {
+            "action": "get_contacts",
+            "time": time.time(),
+            "from": {
+                "account_name": self.login,
+            }
+        }
+        print(input('hold:'))
+        json_package = self.make_json(message_dict)
+        self.client_send(json_package)
+        response = self.client_receive()
+        print(f'{response=}')
+
     def client_receiver(self):
         response = self.client_receive()
         if response:
@@ -84,13 +99,15 @@ class Client:
 
     def start(self):
         self.socket.send(self.make_presence())
-        self.is_running = True
 
         if self.mode == 'r':
             self.client_receiver()
         elif self.mode == 's':
             self.client_sender()
+        elif self.mode == 'gc':
+            self.client_get_contacts()
         else:
+            self.is_running = True
             t1 = Thread(target=self.listener)
             t2 = Thread(target=self.user_interface)
             t1.start()
