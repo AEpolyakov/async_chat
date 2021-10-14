@@ -19,7 +19,7 @@ class Server:
         self.clients = {}
         self.connections = []
         server_logger.info(f'init successful {address}')
-        self.storage = Storage()
+        self.storage = Storage('server')
 
     def start(self):
         server_logger.info('server started')

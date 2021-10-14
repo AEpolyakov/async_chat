@@ -5,6 +5,7 @@ import sys
 from log.client_log_config import client_logger
 from threading import Thread
 import argparse
+from storage import Storage, ClientContactList, MessageHistory
 
 
 class Client:
@@ -17,6 +18,7 @@ class Client:
         self.mode = mode
         client_logger.info(f'client init successful {address}; login:{self.login}; send to:{self.message_to}')
         self.is_running = False
+        self.storage = Storage(f'{self.login}')
 
     def make_message(self, message=None):
         result = {
@@ -87,6 +89,38 @@ class Client:
         response = self.client_receive()
         print(f'{response=}')
 
+    def client_add_contact(self, contact_name: str):
+        message_dict = {
+            "action": "add_contact",
+            "time": time.time(),
+            "from": {
+                "account_name": self.login,
+            },
+            "contact_name": contact_name,
+        }
+        self.storage.insert(ClientContactList, contact_name)
+        print(input('hold:'))
+        json_package = self.make_json(message_dict)
+        self.client_send(json_package)
+        response = self.client_receive()
+        print(f'{response=}')
+
+    def client_delete_contact(self, contact_name: str):
+        message_dict = {
+            "action": "delete_contact",
+            "time": time.time(),
+            "from": {
+                "account_name": self.login,
+            },
+            "contact_name": contact_name,
+        }
+        self.storage.delete(ClientContactList, 'contact_login', contact_name)
+        print(input('hold:'))
+        json_package = self.make_json(message_dict)
+        self.client_send(json_package)
+        response = self.client_receive()
+        print(f'{response=}')
+
     def client_receiver(self):
         response = self.client_receive()
         if response:
@@ -106,6 +140,10 @@ class Client:
             self.client_sender()
         elif self.mode == 'gc':
             self.client_get_contacts()
+        elif self.mode == 'ac':
+            self.client_add_contact(self.message_to)
+        elif self.mode == 'dc':
+            self.client_delete_contact(self.message_to)
         else:
             self.is_running = True
             t1 = Thread(target=self.listener)
