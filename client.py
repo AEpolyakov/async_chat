@@ -6,6 +6,7 @@ from log.client_log_config import client_logger
 from threading import Thread
 import argparse
 from storage import Storage, ClientContactList, MessageHistory
+import datetime
 
 
 class Client:
@@ -74,6 +75,7 @@ class Client:
         if message:
             json_package = self.make_message(message=message)
             self.client_send(json_package)
+            self.storage.insert(MessageHistory, self.login, self.message_to, message, datetime.datetime.now())
 
     def client_get_contacts(self):
         message_dict = {
@@ -133,6 +135,7 @@ class Client:
 
     def start(self):
         self.socket.send(self.make_presence())
+        self.is_running = True
 
         if self.mode == 'r':
             self.client_receiver()
@@ -145,7 +148,6 @@ class Client:
         elif self.mode == 'dc':
             self.client_delete_contact(self.message_to)
         else:
-            self.is_running = True
             t1 = Thread(target=self.listener)
             t2 = Thread(target=self.user_interface)
             t1.start()

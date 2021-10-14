@@ -74,15 +74,29 @@ class Server:
 
     def get_client(self, message: dict):
         name = message["from"]["account_name"]
-        client = self.storage.select(Client, 'login', name)
+        client = self.storage.select(Client, 'login', name).first()
         return client
 
-    def create_or_update_client(self, message: dict):
-        client = self.get_client(message)  # find client if exist
+    def add_history(self, client: Client):
+        self.storage.insert(ClientHistory, client, datetime.datetime.now(), '')
+
+    def create_client_if_not_exist(self, message: dict):
+        client = self.get_client(message)
         if client is None:
-            self.storage.insert(Client, str(message["from"]["account_name"]), '')  # create if not exist
-            client = self.get_client(message)                                # get id of new client
-        self.storage.insert(ClientHistory, client, datetime.datetime.now(), )
+            self.storage.insert(Client, str(message["from"]["account_name"]), '')
+            client = self.get_client(message)                                #
+        self.add_history(client)
+
+    def create_contact_if_not_exist(self, message: dict):
+        client = self.get_client(message)
+        message_to = message['mess_to']
+        print(f'create contact {message} {message_to}')
+        if message_to:
+            contact = self.storage.select(Client, 'login', message_to).first()
+            print(f'{contact=}')
+            contact_record = self.storage.select(ContactList, )
+            self.storage.insert(ContactList, client, contact)
+        self.add_history(client)
 
     def analyse_response(self, responses: dict):
         try:
@@ -92,16 +106,14 @@ class Server:
                     name = decoded_message["from"]["account_name"]
                     self.clients[key] = name
                     print(f'now on server: {self.clients.values()}')
-                    self.create_or_update_client(message=decoded_message)
+                    self.create_client_if_not_exist(decoded_message)
                 elif decoded_message["action"] == "msg":
-                    client_id = self.get_client(decoded_message).id
-                    print(f'analyse msg {client_id=}')
-                    self.storage.insert(ClientHistory, datetime.datetime.now(), client_id)
+                    self.create_contact_if_not_exist(decoded_message)
                 elif decoded_message["action"] == "get_contacts":
-                    client_id = self.get_client(decoded_message).id
-                    contacts = self.storage.select(ContactList, 'owner_id', client_id)
-                    print(f'get contacts {contacts}')
-        except KeyError:
+                    client = self.get_client(decoded_message)
+                    contacts = self.storage.select(ContactList, 'owner_id', client.id).all()
+                    print(f'{contacts}')
+        except Exception:
             pass
 
     def read_requests(self, clients):
@@ -111,14 +123,13 @@ class Server:
             try:
                 message_from_client = json.loads(sock.recv(1024).decode('unicode_escape'))
                 responses[sock] = message_from_client
-                print(f'{message_from_client=}')
+                # print(f'{message_from_client=}')
                 self.analyse_response(responses)
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
                 sock.close()
                 self.connections.remove(sock)
                 self.clients.pop(sock)
-                pass
         return responses
 
     def write_responses(self, requests, clients):
