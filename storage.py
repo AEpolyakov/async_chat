@@ -93,9 +93,12 @@ class Storage:
             session.add(inserting_object)
             session.commit()
 
-    def select(self, Obj: Base, filter_by, filter_value):
+    def select(self, Obj: Base, filter_by='', filter_value=''):
         with self._Session() as session:
-            result = session.query(Obj).filter(getattr(Obj, filter_by).like(filter_value))
+            if filter_value and filter_by:
+                result = session.query(Obj).filter(getattr(Obj, filter_by).like(filter_value))
+            else:
+                result = session.query(Obj)
         return result
 
     def delete(self, Obj: Base, filter_by, filter_value):
@@ -111,7 +114,8 @@ class Storage:
 
 if __name__ == '__main__':
 
-    storage = Storage()
+    storage = Storage('server')
+    print(storage.select(Client).all())
     # storage.insert(Client, 'John', 'info about John')
     # storage.insert(Client, 'Tom', 'info about Tom')
     # storage.insert(Client, 'Paul', 'info about Paul')

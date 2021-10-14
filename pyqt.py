@@ -1,32 +1,36 @@
-
-import sys
-from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QApplication
 from storage import Storage, Client
+from PyQt5.QtWidgets import QApplication, QWidget, QTextEdit, QVBoxLayout, QPushButton
+import sys
 
 
-class Example(QWidget):
+class TextEditDemo(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-    def __init__(self):
-        super().__init__()
+        self.setWindowTitle("QTextEdit")
+        self.resize(300, 270)
 
-        self.initUI()
+        self.textEdit = QTextEdit()
+        self.btnPress = QPushButton("get clients")
 
-    def initUI(self):
-        self.lbl = QLabel(self)
-        self.lbl.move(60, 40)
+        layout = QVBoxLayout()
+        layout.addWidget(self.textEdit)
+        layout.addWidget(self.btnPress)
+        self.setLayout(layout)
 
+        self.btnPress.clicked.connect(self.btnPress_Clicked)
+
+    def btnPress_Clicked(self):
         storage = Storage('server')
-        client = storage.select(Client, 'login', 'user3').first()
-
-        self.lbl.setText(f'hello! {client.id}')
-
-        self.setGeometry(300, 300, 280, 170)
-        self.setWindowTitle('QLineEdit')
-        self.show()
+        clients = storage.select(Client).all()
+        text = 'clients registered on server\n'
+        for client in clients:
+            text += f"{client.id} {client.login}\n"
+        self.textEdit.setPlainText(text)
 
 
 if __name__ == '__main__':
-
     app = QApplication(sys.argv)
-    ex = Example()
+    win = TextEditDemo()
+    win.show()
     sys.exit(app.exec_())
