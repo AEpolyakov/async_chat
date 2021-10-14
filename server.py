@@ -5,6 +5,8 @@ import json
 from log.server_log_config import server_logger, log
 import select
 from PortDescriptor import PortDescriptor
+from storage import Storage, Client, ClientHistory, ContactList
+import datetime
 
 
 class Server:
@@ -17,12 +19,14 @@ class Server:
         self.clients = {}
         self.connections = []
         server_logger.info(f'init successful {address}')
+        self.storage = Storage('server')
 
     def start(self):
         server_logger.info('server started')
         while True:
             try:
                 connection, address = self.socket.accept()
+                connection.setblocking(True)
             except OSError as e:
                 pass
             else:
@@ -68,6 +72,30 @@ class Server:
         sock.settimeout(0.2)
         return sock
 
+    def get_client(self, message: dict):
+        name = message["from"]["account_name"]
+        client = self.storage.select(Client, 'login', name).first()
+        return client
+
+    def add_history(self, client: Client):
+        self.storage.insert(ClientHistory, client, datetime.datetime.now(), '')
+
+    def create_client_if_not_exist(self, message: dict):
+        client = self.get_client(message)
+        if client is None:
+            self.storage.insert(Client, str(message["from"]["account_name"]), '')
+            client = self.get_client(message)                                #
+        self.add_history(client)
+
+    def create_contact_if_not_exist(self, message: dict):
+        client = self.get_client(message)
+        message_to = message['mess_to']
+        if message_to:
+            contact = self.storage.select(Client, 'login', message_to).first()
+            contact_record = self.storage.select(ContactList, )
+            self.storage.insert(ContactList, client, contact)
+        self.add_history(client)
+
     def analyse_response(self, responses: dict):
         try:
             for key in responses:
@@ -76,6 +104,12 @@ class Server:
                     name = decoded_message["from"]["account_name"]
                     self.clients[key] = name
                     print(f'now on server: {self.clients.values()}')
+                    self.create_client_if_not_exist(decoded_message)
+                elif decoded_message["action"] == "msg":
+                    self.create_contact_if_not_exist(decoded_message)
+                elif decoded_message["action"] == "get_contacts":
+                    client = self.get_client(decoded_message)
+                    contacts = self.storage.select(ContactList, 'owner_id', client.id).all()
         except Exception:
             pass
 
@@ -84,7 +118,8 @@ class Server:
 
         for sock in clients:
             try:
-                responses[sock] = json.loads(sock.recv(1024).decode('unicode_escape'))
+                message_from_client = json.loads(sock.recv(1024).decode('unicode_escape'))
+                responses[sock] = message_from_client
                 self.analyse_response(responses)
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
@@ -99,7 +134,6 @@ class Server:
             try:
                 for request in requests.values():
                     try:
-                        print(f'{self.clients[sock]=} {request["from"]["account_name"]=} {request["message"]}')
                         if request["mess_to"] in ['', self.clients[sock]] and \
                                 request["from"]["account_name"] != self.clients[sock]:
                             response = json.dumps(request).encode('unicode_escape')
