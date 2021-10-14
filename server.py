@@ -90,10 +90,8 @@ class Server:
     def create_contact_if_not_exist(self, message: dict):
         client = self.get_client(message)
         message_to = message['mess_to']
-        print(f'create contact {message} {message_to}')
         if message_to:
             contact = self.storage.select(Client, 'login', message_to).first()
-            print(f'{contact=}')
             contact_record = self.storage.select(ContactList, )
             self.storage.insert(ContactList, client, contact)
         self.add_history(client)
@@ -112,7 +110,6 @@ class Server:
                 elif decoded_message["action"] == "get_contacts":
                     client = self.get_client(decoded_message)
                     contacts = self.storage.select(ContactList, 'owner_id', client.id).all()
-                    print(f'{contacts}')
         except Exception:
             pass
 
@@ -123,7 +120,6 @@ class Server:
             try:
                 message_from_client = json.loads(sock.recv(1024).decode('unicode_escape'))
                 responses[sock] = message_from_client
-                # print(f'{message_from_client=}')
                 self.analyse_response(responses)
             except Exception as ex:
                 server_logger.info(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
@@ -138,7 +134,6 @@ class Server:
             try:
                 for request in requests.values():
                     try:
-                        print(f'{self.clients[sock]=} {request["from"]["account_name"]=} {request["message"]}')
                         if request["mess_to"] in ['', self.clients[sock]] and \
                                 request["from"]["account_name"] != self.clients[sock]:
                             response = json.dumps(request).encode('unicode_escape')

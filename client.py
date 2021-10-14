@@ -51,7 +51,6 @@ class Client:
     def client_send(self, message):
         try:
             self.socket.send(message)
-            print(f'sending message {message}')
         except Exception:
             client_logger.error(f'failed to send')
 
@@ -85,7 +84,6 @@ class Client:
                 "account_name": self.login,
             }
         }
-        print(input('hold:'))
         json_package = self.make_json(message_dict)
         self.client_send(json_package)
         response = self.client_receive()
@@ -101,11 +99,10 @@ class Client:
             "contact_name": contact_name,
         }
         self.storage.insert(ClientContactList, contact_name)
-        print(input('hold:'))
         json_package = self.make_json(message_dict)
         self.client_send(json_package)
         response = self.client_receive()
-        print(f'{response=}')
+        print(response)
 
     def client_delete_contact(self, contact_name: str):
         message_dict = {
@@ -117,11 +114,10 @@ class Client:
             "contact_name": contact_name,
         }
         self.storage.delete(ClientContactList, 'contact_login', contact_name)
-        print(input('hold:'))
         json_package = self.make_json(message_dict)
         self.client_send(json_package)
         response = self.client_receive()
-        print(f'{response=}')
+        print(response)
 
     def client_receiver(self):
         response = self.client_receive()
